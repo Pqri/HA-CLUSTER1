@@ -1,7 +1,6 @@
 FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive TZ=Asia/Jakarta LANG=C.UTF-8
 
-# Core cluster stack + tooling (includes pacemaker-cli-utils as requested)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends software-properties-common gnupg ca-certificates curl \
  && add-apt-repository -y universe \
@@ -13,21 +12,16 @@ RUN apt-get update \
       openssl supervisor procps vim less kmod e2fsprogs lsof jq postgresql-client \
  && rm -rf /var/lib/apt/lists/*
 
-# Minimal users & move runtime to /home/cluster (keep pacemaker state default)
+# runtime pindah ke /home/cluster (log & pcsd), pacemaker state tetap default /var/lib/pacemaker
 RUN groupadd -r haclient 2>/dev/null || true \
  && id -u hacluster >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin hacluster \
- && mkdir -p /home/cluster/pcsd \
-              /home/cluster/log/pcsd \
-              /home/cluster/log/supervisor \
-              /home/cluster/supervisor/conf.d
-
-# Redirect pcsd default paths via symlink; keep /var/lib/pacemaker default
-RUN mkdir -p /var/lib /var/log \
+ && mkdir -p /home/cluster/pcsd /home/cluster/log/pcsd /home/cluster/log/supervisor /home/cluster/supervisor/conf.d \
+ && mkdir -p /var/lib /var/log \
  && rm -rf /var/lib/pcsd /var/log/pcsd \
  && ln -s /home/cluster/pcsd /var/lib/pcsd \
  && ln -s /home/cluster/log/pcsd /var/log/pcsd
 
-# Default supervisor config (can be overridden by bind-mount from host)
+# supervisord default (boleh dioverride file host, opsional)
 RUN printf "%s\n" \
 "[unix_http_server]" \
 "file=/var/run/supervisor.sock" \
@@ -45,7 +39,7 @@ RUN printf "%s\n" \
 "files=/home/cluster/supervisor/conf.d/*.conf" \
 > /etc/supervisor/supervisord.conf
 
-# Default programs (can be overridden by host file)
+# program yang diawasi
 RUN printf "%s\n" \
 "[program:pcsd]" \
 "command=/usr/sbin/pcsd" \
