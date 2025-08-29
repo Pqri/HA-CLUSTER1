@@ -1,0 +1,39 @@
+services:
+  ha-stack:
+    image: fiqri/ha-stack:2.2-ha
+    container_name: ha-stack
+    hostname: serverA            # On serverB, change this to: serverB
+    network_mode: host
+    privileged: true
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Asia/Jakarta}
+    volumes:
+      # Optional overrides (safe to remove to use image defaults):
+      - ./supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+      - ./supervisor/pacemaker.conf:/home/cluster/supervisor/conf.d/pacemaker.conf:ro
+
+      # REQUIRED: Corosync config & authkey
+      - ./corosync/corosync.conf:/etc/corosync/corosync.conf:ro
+      - ./corosync/authkey:/etc/corosync/authkey:ro
+
+      # For OCF docker agent to manage app containers
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # Optional: handy for mounting DRBD-backed FS later
+      - /mnt:/mnt:rshared
+
+      # Optional: mount scripts into container for convenience
+      - ./scripts:/cluster/scripts:ro
+
+    extra_hosts:
+      - "serverA:192.168.56.27"
+      - "serverB:192.168.56.28"
+
+    healthcheck:
+      test: ["CMD-SHELL", "corosync-cmapctl totem.nodeid >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 20s
