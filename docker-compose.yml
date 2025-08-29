@@ -10,8 +10,8 @@ services:
       - TZ=${TZ:-Asia/Jakarta}
     volumes:
       # Optional overrides (safe to remove to use image defaults):
-      - ./supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
-      - ./supervisor/pacemaker.conf:/home/cluster/supervisor/conf.d/pacemaker.conf:ro
+     # - ./supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+     # - ./supervisor/pacemaker.conf:/home/cluster/supervisor/conf.d/pacemaker.conf:ro
 
       # REQUIRED: Corosync config & authkey
       - ./corosync/corosync.conf:/etc/corosync/corosync.conf:ro
